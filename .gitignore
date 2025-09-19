@@ -31,3 +31,4 @@ yarn.lock
 *.iml
 
 deploy.ps1
+/src/content/posts/_sample.md
