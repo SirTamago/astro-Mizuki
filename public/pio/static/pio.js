@@ -305,6 +305,53 @@ var Paul_Pio = function (prop) {
         if (!(prop.hidden && tools.isMobile())) {
             if (!noModel) {
                 action.welcome();
+
+                // ====== 高 DPI / 保持视觉尺寸不变 的处理 ======
+                try {
+                    const canvas = current.canvas;
+                    const container = current.body; // .pio-container
+                    // 优先使用 prop 提供的视觉尺寸，否则读取容器当前尺寸
+                    const cssWidth = (prop.width && +prop.width) || container.clientWidth || canvas.clientWidth || 300;
+                    const cssHeight = (prop.height && +prop.height) || container.clientHeight || canvas.clientHeight || 300;
+
+                    // 如果父容器没有显式设置尺寸，确保 container 跟 config 一致（可选）
+                    if (prop.width)  container.style.width  = cssWidth + "px";
+                    if (prop.height) container.style.height = cssHeight + "px";
+
+                    // 设备像素比（可被 prop.pixelRatio 覆盖）
+                    const dpr = (prop.pixelRatio && +prop.pixelRatio) || window.devicePixelRatio || 1;
+
+                    // 设置 canvas 的真实像素尺寸（高分渲染）
+                    const targetW = Math.max(1, Math.round(cssWidth * dpr));
+                    const targetH = Math.max(1, Math.round(cssHeight * dpr));
+                    canvas.width  = targetW;
+                    canvas.height = targetH;
+
+                    // 保持视觉大小不变（CSS 大小为用户期望的 px）
+                    canvas.style.width  = cssWidth + "px";
+                    canvas.style.height = cssHeight + "px";
+
+                    // 修正渲染上下文（WebGL 或 2D）
+                    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+                    if (gl && typeof gl.viewport === "function") {
+                        gl.viewport(0, 0, targetW, targetH);
+                    } else {
+                        const ctx2d = canvas.getContext("2d");
+                        if (ctx2d && typeof ctx2d.setTransform === "function") {
+                            ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+                        }
+                    }
+
+                    // 如果父容器被 CSS transform / zoom 缩放，会造成视觉大小异常，提示调试信息
+                    const cs = window.getComputedStyle(container);
+                    if (cs.transform && cs.transform !== "none") {
+                        console.warn("pio container has CSS transform:", cs.transform, "this may affect visual size.");
+                    }
+                } catch (e) {
+                    console.error("Pio HiDPI setup failed:", e);
+                }
+                // ==============================================
+
                 loadlive2d("pio", prop.model[0]);
             }
 

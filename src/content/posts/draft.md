@@ -12,6 +12,8 @@ This article is currently in a draft state and is not published. Therefore, it w
 
 When the article is ready for publication, you can update the "draft" field to "false" in the Frontmatter:
 
+1
+
 ```markdown
 ---
 title: Draft Example
